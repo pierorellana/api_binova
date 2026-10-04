@@ -25,6 +25,7 @@ Credencial demo: `demo@binova.local` / `Demo1234!`.
 El API no implementa recuperación de contraseña. Firebase/FCM se integra al cierre,
 cuando estén disponibles las credenciales del ambiente.
 
-La primera vertical implementada contiene salud, autenticación con refresh rotatorio,
-cuentas y movimientos. Los módulos financieros restantes se incorporan sobre los
-mismos puertos, envelope y migraciones forward-only.
+La vertical actual contiene salud, autenticación con refresh rotatorio, dashboard
+server-driven, cuentas, movimientos, perfil/preferencias, dispositivos y
+notificaciones. Los módulos financieros restantes se incorporan sobre los mismos
+puertos, envelope y migraciones forward-only.

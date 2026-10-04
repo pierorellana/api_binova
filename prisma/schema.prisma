@@ -17,6 +17,9 @@ model User {
   updatedAt   DateTime @updatedAt @map("updated_at")
   sessions    Session[]
   accounts    Account[]
+  preferences ProfilePreferences?
+  notifications Notification[]
+  deviceRegistrations DeviceRegistration[]
 
   @@map("users")
 }
@@ -70,4 +73,59 @@ model Transaction {
 
   @@index([accountId, occurredAt(sort: Desc)])
   @@map("transactions")
+}
+
+model ProfilePreferences {
+  id                  String   @id @default(uuid()) @db.Uuid
+  userId              String   @unique @map("user_id") @db.Uuid
+  hideBalance         Boolean  @default(false) @map("hide_balance")
+  reduceMotion        Boolean  @default(false) @map("reduce_motion")
+  notificationsEnabled Boolean @default(true) @map("notifications_enabled")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  user                User     @relation(fields: [userId], references: [id])
+
+  @@map("profile_preferences")
+}
+
+model DashboardConfig {
+  id            String   @id @default(uuid()) @db.Uuid
+  segment       String   @db.VarChar(40)
+  schemaVersion Int      @default(1) @map("schema_version")
+  config        Json
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([segment, isActive])
+  @@map("dashboard_configs")
+}
+
+model Notification {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  type         String   @db.VarChar(40)
+  title        String   @db.VarChar(120)
+  body         String   @db.VarChar(240)
+  resourceType String?  @map("resource_type") @db.VarChar(40)
+  resourceId   String?  @map("resource_id") @db.Uuid
+  readAt       DateTime? @map("read_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+model DeviceRegistration {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  platform    String   @db.VarChar(16)
+  pushToken   String   @map("push_token")
+  deviceLabel String?  @map("device_label") @db.VarChar(100)
+  lastSeenAt  DateTime @default(now()) @map("last_seen_at")
+  revokedAt   DateTime? @map("revoked_at")
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, pushToken])
+  @@map("device_registrations")
 }

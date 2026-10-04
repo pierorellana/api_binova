@@ -32,6 +32,52 @@ async function main(): Promise<void> {
     },
   });
 
+  await prisma.profilePreferences.upsert({
+    where: { userId: user.id },
+    update: {},
+    create: { userId: user.id },
+  });
+
+  const dashboard = await prisma.dashboardConfig.findFirst({
+    where: { segment: user.segment, isActive: true },
+  });
+  if (!dashboard) {
+    await prisma.dashboardConfig.create({
+      data: {
+        segment: user.segment,
+        schemaVersion: 1,
+        config: {
+          sections: [
+            {
+              id: 'balance',
+              type: 'balance',
+              order: 0,
+              payload: {
+                label: 'Saldo total',
+                amount: '2450.00',
+                currency: 'USD',
+                updatedLabel: 'Actualizado recientemente',
+              },
+            },
+            {
+              id: 'quick-actions',
+              type: 'quick_actions',
+              order: 1,
+              payload: {
+                actions: [
+                  { id: 'transfer', label: 'Transferir' },
+                  { id: 'payment', label: 'Pagar servicio' },
+                  { id: 'topup', label: 'Recargar línea' },
+                ],
+              },
+            },
+          ],
+        },
+        isActive: true,
+      },
+    });
+  }
+
   const transactionCount = await prisma.transaction.count({
     where: { accountId: account.id },
   });
