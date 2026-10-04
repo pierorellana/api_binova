@@ -26,6 +26,7 @@ El API no implementa recuperación de contraseña. Firebase/FCM se integra al ci
 cuando estén disponibles las credenciales del ambiente.
 
 La vertical actual contiene salud, autenticación con refresh rotatorio, dashboard
-server-driven, cuentas, movimientos, perfil/preferencias, dispositivos y
-notificaciones. Los módulos financieros restantes se incorporan sobre los mismos
-puertos, envelope y migraciones forward-only.
+server-driven, cuentas, movimientos, perfil/preferencias, dispositivos,
+notificaciones y operaciones demo de transferencias, pagos y recargas con
+idempotencia. Tarjetas, insights y FX se incorporan sobre los mismos puertos,
+envelope y migraciones forward-only.

@@ -109,6 +109,22 @@ async function main(): Promise<void> {
       ],
     });
   }
+
+  const beneficiaryCount = await prisma.beneficiary.count({
+    where: { userId: user.id },
+  });
+  if (beneficiaryCount === 0) {
+    await prisma.beneficiary.create({
+      data: {
+        userId: user.id,
+        displayName: 'Beneficiario demo',
+        bankName: 'Banco Internacional',
+        maskedAccountNumber: '**** 7788',
+        currency: 'USD',
+        status: 'active',
+      },
+    });
+  }
 }
 
 main()

@@ -20,6 +20,9 @@ model User {
   preferences ProfilePreferences?
   notifications Notification[]
   deviceRegistrations DeviceRegistration[]
+  beneficiaries Beneficiary[]
+  financialOperations FinancialOperation[]
+  idempotencyKeys IdempotencyKey[]
 
   @@map("users")
 }
@@ -128,4 +131,57 @@ model DeviceRegistration {
 
   @@unique([userId, pushToken])
   @@map("device_registrations")
+}
+
+model Beneficiary {
+  id                  String   @id @default(uuid()) @db.Uuid
+  userId              String   @map("user_id") @db.Uuid
+  displayName         String   @map("display_name") @db.VarChar(120)
+  bankName            String   @map("bank_name") @db.VarChar(120)
+  maskedAccountNumber String   @map("masked_account_number") @db.VarChar(32)
+  currency            String   @db.Char(3)
+  status              String   @default("active") @db.VarChar(24)
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  user                User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, status, displayName])
+  @@map("beneficiaries")
+}
+
+model FinancialOperation {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  operationType     String   @map("operation_type") @db.VarChar(24)
+  status            String   @db.VarChar(24)
+  amount            Decimal? @db.Decimal(18, 2)
+  currency          String?  @db.Char(3)
+  requestJson       Json     @default("{}") @map("request_json")
+  resultJson        Json     @default("{}") @map("result_json")
+  resourceId        String?  @map("resource_id") @db.Uuid
+  providerReference String?  @map("provider_reference") @db.VarChar(120)
+  failureCode       String?  @map("failure_code") @db.VarChar(80)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  user              User     @relation(fields: [userId], references: [id])
+  idempotencyKeys   IdempotencyKey[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([resourceId])
+  @@map("financial_operations")
+}
+
+model IdempotencyKey {
+  id            String              @id @default(uuid()) @db.Uuid
+  userId        String              @map("user_id") @db.Uuid
+  operation     String              @db.VarChar(40)
+  key           String              @db.VarChar(120)
+  requestHash   String              @map("request_hash") @db.VarChar(64)
+  operationId   String?             @map("operation_id") @db.Uuid
+  createdAt     DateTime            @default(now()) @map("created_at")
+  user          User                @relation(fields: [userId], references: [id])
+  operationRef  FinancialOperation? @relation(fields: [operationId], references: [id])
+
+  @@unique([userId, operation, key])
+  @@map("idempotency_keys")
 }
