@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid()) @db.Uuid
+  email       String   @unique @db.VarChar(255)
+  displayName String   @map("display_name") @db.VarChar(120)
+  segment     String   @default("standard") @db.VarChar(40)
+  passwordHash String  @map("password_hash")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  sessions    Session[]
+  accounts    Account[]
+
+  @@map("users")
+}
+
+model Session {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  refreshTokenHash String   @unique @map("refresh_token_hash") @db.VarChar(128)
+  expiresAt        DateTime @map("expires_at")
+  lastSeenAt       DateTime @default(now()) @map("last_seen_at")
+  revokedAt        DateTime? @map("revoked_at")
+  rotatedFromId    String?  @map("rotated_from_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at")
+  user             User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, expiresAt(sort: Desc)])
+  @@map("sessions")
+}
+
+model Account {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  type             String   @db.VarChar(32)
+  name             String   @db.VarChar(80)
+  maskedNumber     String   @map("masked_number") @db.VarChar(32)
+  currency         String   @db.Char(3)
+  ledgerBalance    Decimal  @default(0) @map("ledger_balance") @db.Decimal(18, 2)
+  availableBalance Decimal  @default(0) @map("available_balance") @db.Decimal(18, 2)
+  status           String   @default("active") @db.VarChar(24)
+  createdAt        DateTime @default(now()) @map("created_at")
+  user             User     @relation(fields: [userId], references: [id])
+  transactions     Transaction[]
+
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Transaction {
+  id          String   @id @default(uuid()) @db.Uuid
+  accountId   String   @map("account_id") @db.Uuid
+  kind        String   @db.VarChar(24)
+  description String   @db.VarChar(160)
+  category    String   @db.VarChar(50)
+  amount      Decimal  @db.Decimal(18, 2)
+  currency    String   @db.Char(3)
+  status      String   @db.VarChar(24)
+  occurredAt  DateTime @map("occurred_at")
+  reference   String?  @db.VarChar(80)
+  createdAt   DateTime @default(now()) @map("created_at")
+  account     Account  @relation(fields: [accountId], references: [id])
+
+  @@index([accountId, occurredAt(sort: Desc)])
+  @@map("transactions")
+}

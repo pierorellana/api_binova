@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: binova-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: binova
+      POSTGRES_USER: binova
+      POSTGRES_PASSWORD: binova
+    ports:
+      - "5432:5432"
+    volumes:
+      - binova-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  binova-postgres-data:
