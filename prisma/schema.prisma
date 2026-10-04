@@ -23,6 +23,8 @@ model User {
   beneficiaries Beneficiary[]
   financialOperations FinancialOperation[]
   idempotencyKeys IdempotencyKey[]
+  cards Card[]
+  walletProvisioning WalletProvisioning[]
 
   @@map("users")
 }
@@ -55,6 +57,7 @@ model Account {
   createdAt        DateTime @default(now()) @map("created_at")
   user             User     @relation(fields: [userId], references: [id])
   transactions     Transaction[]
+  cards            Card[]
 
   @@index([userId])
   @@map("accounts")
@@ -184,4 +187,53 @@ model IdempotencyKey {
 
   @@unique([userId, operation, key])
   @@map("idempotency_keys")
+}
+
+model Card {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  accountId        String?  @map("account_id") @db.Uuid
+  type             String   @db.VarChar(24)
+  productName      String   @map("product_name") @db.VarChar(80)
+  maskedPan        String   @map("masked_pan") @db.VarChar(32)
+  status           String   @default("active") @db.VarChar(24)
+  isVirtual        Boolean  @default(false) @map("is_virtual")
+  createdAt        DateTime @default(now()) @map("created_at")
+  frozenAt         DateTime? @map("frozen_at")
+  user             User     @relation(fields: [userId], references: [id])
+  account          Account? @relation(fields: [accountId], references: [id])
+  limits           CardLimit?
+  walletProvisioning WalletProvisioning[]
+
+  @@index([userId, status])
+  @@map("cards")
+}
+
+model CardLimit {
+  id                   String   @id @default(uuid()) @db.Uuid
+  cardId               String   @unique @map("card_id") @db.Uuid
+  dailyPurchaseLimit   Decimal  @map("daily_purchase_limit") @db.Decimal(18, 2)
+  dailyWithdrawalLimit Decimal  @map("daily_withdrawal_limit") @db.Decimal(18, 2)
+  currency             String   @db.Char(3)
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  card                 Card     @relation(fields: [cardId], references: [id])
+
+  @@map("card_limits")
+}
+
+model WalletProvisioning {
+  id                String   @id @default(uuid()) @db.Uuid
+  cardId            String   @map("card_id") @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  wallet            String   @db.VarChar(32)
+  status            String   @default("processing") @db.VarChar(24)
+  providerReference String?  @map("provider_reference") @db.VarChar(120)
+  provisioningUrl   String?  @map("provisioning_url")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  card              Card     @relation(fields: [cardId], references: [id])
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@index([cardId, createdAt(sort: Desc)])
+  @@map("wallet_provisioning")
 }

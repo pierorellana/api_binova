@@ -125,6 +125,46 @@ async function main(): Promise<void> {
       },
     });
   }
+
+  const debitCard = await prisma.card.upsert({
+    where: { id: '6a6a7a32-4b0d-4b2e-9f2d-111111111111' },
+    update: {},
+    create: {
+      id: '6a6a7a32-4b0d-4b2e-9f2d-111111111111',
+      userId: user.id,
+      accountId: account.id,
+      type: 'debit',
+      productName: 'BInova Débito',
+      maskedPan: '•••• 4421',
+      status: 'active',
+      isVirtual: false,
+    },
+  });
+  const creditCard = await prisma.card.upsert({
+    where: { id: '6a6a7a32-4b0d-4b2e-9f2d-222222222222' },
+    update: {},
+    create: {
+      id: '6a6a7a32-4b0d-4b2e-9f2d-222222222222',
+      userId: user.id,
+      type: 'credit',
+      productName: 'BInova Crédito',
+      maskedPan: '•••• 7788',
+      status: 'active',
+      isVirtual: false,
+    },
+  });
+  for (const card of [debitCard, creditCard]) {
+    await prisma.cardLimit.upsert({
+      where: { cardId: card.id },
+      update: {},
+      create: {
+        cardId: card.id,
+        dailyPurchaseLimit: '1000.00',
+        dailyWithdrawalLimit: '300.00',
+        currency: 'USD',
+      },
+    });
+  }
 }
 
 main()

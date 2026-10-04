@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AccountsModule } from './modules/accounts/accounts.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CardsModule } from './modules/cards/cards.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { HealthModule } from './modules/health/health.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -23,6 +24,7 @@ import { PrismaModule } from './infrastructure/database/prisma.module';
     ProfileModule,
     NotificationsModule,
     OperationsModule,
+    CardsModule,
   ],
 })
 export class AppModule {}
