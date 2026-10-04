@@ -9,6 +9,7 @@ API NestJS modular de BInova. La fuente de contrato es
 Copy-Item .env.example .env
 npm install
 npm run prisma:generate
+docker compose up -d postgres
 npm run prisma:deploy
 npm run seed
 npm run start:dev
