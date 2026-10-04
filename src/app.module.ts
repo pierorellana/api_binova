@@ -13,11 +13,13 @@ import { OperationsModule } from './modules/operations/operations.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { PrismaModule } from './infrastructure/database/prisma.module';
+import { ObservabilityModule } from './common/observability/observability.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    ObservabilityModule,
     HealthModule,
     AuthModule,
     AccountsModule,

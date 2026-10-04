@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { CorrelationIdInterceptor } from './common/interceptors/correlation-id.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { ApiObservabilityInterceptor } from './common/observability/api-observability.interceptor';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
@@ -22,7 +23,10 @@ async function bootstrap(): Promise<void> {
       transform: true,
     }),
   );
-  app.useGlobalInterceptors(new CorrelationIdInterceptor());
+  app.useGlobalInterceptors(
+    new CorrelationIdInterceptor(),
+    app.get(ApiObservabilityInterceptor),
+  );
   app.useGlobalFilters(new HttpExceptionFilter());
 
   const swaggerConfig = new DocumentBuilder()

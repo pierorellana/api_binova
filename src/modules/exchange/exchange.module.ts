@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { AuthModule } from '../auth/auth.module';
+import { ObservabilityModule } from '../../common/observability/observability.module';
 import { DemoFxProvider } from './demo-fx-provider';
 import { ExchangeController } from './exchange.controller';
 import { ExchangeService } from './exchange.service';
@@ -9,7 +10,7 @@ import { FX_PROVIDER } from './fx-provider';
 import { HttpFxProvider } from './http-fx-provider';
 
 @Module({
-  imports: [AuthModule, ConfigModule],
+  imports: [AuthModule, ConfigModule, ObservabilityModule],
   controllers: [ExchangeController],
   providers: [
     DemoFxProvider,

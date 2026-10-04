@@ -35,3 +35,13 @@ Cuando `FX_PROVIDER_BASE_URL` está vacío se usa el adapter demo determinista. 
 configurarlo, el API usa el proveedor HTTP con timeout, caché fresh/stale y
 `FX_UNAVAILABLE` (503) fuera de la ventana stale. La API key, si aplica, solo se
 lee en backend mediante variables de entorno.
+
+La observabilidad backend emite eventos estructurados `api_request` y
+`dependency_call` con correlación, ruta, estado y latencia. No registra headers,
+cuerpos, saldos, tokens ni credenciales. La evidencia rápida se ejecuta con
+`npm test -- --runInBand`, `npm run build` y `npx prisma validate`.
+
+Señales recomendadas para el ambiente demo: p95 de latencia por ruta, tasa de
+respuestas 5xx, latencia/tasa de error de `fx_provider` y conteo de
+`IDEMPOTENCY_CONFLICT`. Las alertas deben activar revisión cuando se degraden
+latencia, disponibilidad o una dependencia, sin incluir datos sensibles.

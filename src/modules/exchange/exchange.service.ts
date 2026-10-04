@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+import { ObservabilityService } from '../../common/observability/observability.service';
 import { ExchangeRate, FX_PROVIDER, FxProvider } from './fx-provider';
 
 interface CachedExchangeRate {
@@ -21,6 +22,7 @@ export class ExchangeService {
   constructor(
     @Inject(FX_PROVIDER) private readonly provider: FxProvider,
     private readonly config: ConfigService,
+    private readonly observability?: ObservabilityService,
   ) {}
 
   async getRate(baseInput: string, quoteInput: string) {
@@ -44,6 +46,11 @@ export class ExchangeService {
 
     try {
       const payload = await this.provider.getRate(base, quote);
+      this.observability?.recordDependency(
+        'fx_provider',
+        Date.now() - now,
+        true,
+      );
       const normalized = { ...payload, base, quote };
       this.cache.set(key, {
         payload: normalized,
@@ -52,6 +59,11 @@ export class ExchangeService {
       });
       return { ...normalized, stale: false };
     } catch {
+      this.observability?.recordDependency(
+        'fx_provider',
+        Date.now() - now,
+        false,
+      );
       if (
         cached &&
         now - cached.fetchedAt <= this.seconds('FX_STALE_MAX_AGE_SECONDS', 900) * 1000
