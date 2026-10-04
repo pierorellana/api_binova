@@ -28,5 +28,10 @@ cuando estén disponibles las credenciales del ambiente.
 La vertical actual contiene salud, autenticación con refresh rotatorio, dashboard
 server-driven, cuentas, movimientos, perfil/preferencias, dispositivos,
 notificaciones y operaciones demo de transferencias, pagos y recargas con
-idempotencia. Tarjetas, insights y FX se incorporan sobre los mismos puertos,
-envelope y migraciones forward-only.
+idempotencia. También expone tarjetas virtuales, congelamiento, límites y Wallet,
+insights financieros y tipos de cambio detrás de un proveedor FX configurable.
+
+Cuando `FX_PROVIDER_BASE_URL` está vacío se usa el adapter demo determinista. Al
+configurarlo, el API usa el proveedor HTTP con timeout, caché fresh/stale y
+`FX_UNAVAILABLE` (503) fuera de la ventana stale. La API key, si aplica, solo se
+lee en backend mediante variables de entorno.
