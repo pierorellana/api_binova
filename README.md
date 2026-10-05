@@ -1,7 +1,7 @@
 # BInova API
 
 API NestJS modular de BInova. La fuente de contrato es
-`../BInova_Specs_v2.0/BInova_Specs_v2.0/contracts/openapi.yaml`.
+`../context/contracts/openapi.yaml`.
 
 ## Primera ejecución
 
@@ -36,6 +36,9 @@ Cuando `FX_PROVIDER_BASE_URL` está vacío se usa el adapter demo determinista. 
 configurarlo, el API usa el proveedor HTTP con timeout, caché fresh/stale y
 `FX_UNAVAILABLE` (503) fuera de la ventana stale. La API key, si aplica, solo se
 lee en backend mediante variables de entorno.
+
+Las migraciones Prisma ejecutables actuales son `0001_init`,
+`0002_dashboard_profile_notifications`, `0003_operations` y `0004_cards`.
 
 La observabilidad backend emite eventos estructurados `api_request` y
 `dependency_call` con correlación, ruta, estado y latencia. No registra headers,
