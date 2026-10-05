@@ -14,12 +14,14 @@ import { ProfileModule } from './modules/profile/profile.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { PrismaModule } from './infrastructure/database/prisma.module';
 import { ObservabilityModule } from './common/observability/observability.module';
+import { PushModule } from './infrastructure/push/push.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     ObservabilityModule,
+    PushModule,
     HealthModule,
     AuthModule,
     AccountsModule,

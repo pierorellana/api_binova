@@ -26,12 +26,14 @@ export class ObservabilityService {
     dependency: string,
     latencyMs: number,
     succeeded: boolean,
+    code?: string,
   ): void {
     this.write(succeeded ? 'log' : 'warn', {
       event: 'dependency_call',
       dependency,
       latencyMs,
       succeeded,
+      ...(code ? { code } : {}),
     });
   }
 
