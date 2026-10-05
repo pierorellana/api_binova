@@ -10,6 +10,10 @@ const ALLOWED_FIELDS = new Set([
   'dependency',
   'succeeded',
   'message',
+  'notificationId',
+  'sentCount',
+  'invalidCount',
+  'failedCount',
 ]);
 
 export function sanitizeApiLog(

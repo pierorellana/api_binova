@@ -3,6 +3,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Param,
   ParseUUIDPipe,
   Post,
@@ -10,6 +11,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { AccessTokenGuard } from '../../common/auth/access-token.guard';
@@ -23,7 +25,10 @@ import { NotificationsService } from './notifications.service';
 @UseGuards(AccessTokenGuard)
 @Controller('notifications')
 export class NotificationsController {
-  constructor(private readonly service: NotificationsService) {}
+  constructor(
+    private readonly service: NotificationsService,
+    private readonly config: ConfigService,
+  ) {}
 
   @Get()
   async list(
@@ -41,6 +46,25 @@ export class NotificationsController {
     return success(page.items, request.correlationId, {
       nextCursor: page.nextCursor,
     });
+  }
+
+  @Post('test')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async test(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    if (this.config.get<string>('PUSH_TEST_ENDPOINT_ENABLED') !== 'true') {
+      throw new NotFoundException({
+        code: 'NOT_FOUND',
+        message: 'La ruta no existe.',
+      });
+    }
+    return success(
+      await this.service.createDevelopmentTest(user.userId),
+      request.correlationId,
+      { statusCode: HttpStatus.ACCEPTED, message: 'Notificación de prueba creada.' },
+    );
   }
 
   @Post(':id/read')

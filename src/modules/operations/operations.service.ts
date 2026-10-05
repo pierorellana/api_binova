@@ -9,6 +9,7 @@ import { Prisma } from '@prisma/client';
 import { createHash } from 'node:crypto';
 
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { CreateTopupDto } from './dto/create-topup.dto';
 import { CreateTransferDto } from './dto/create-transfer.dto';
@@ -17,7 +18,10 @@ type OperationType = 'transfer' | 'payment' | 'topup';
 
 @Injectable()
 export class OperationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async listBeneficiaries(userId: string) {
     const beneficiaries = await this.prisma.beneficiary.findMany({
@@ -195,13 +199,26 @@ export class OperationsService {
     if (existing) return this.resolveExisting(existing, requestHash);
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const outcome = await this.prisma.$transaction(async (tx) => {
         const inside = await tx.idempotencyKey.findUnique({
           where: { userId_operation_key: { userId, operation, key } },
           include: { operationRef: true },
         });
-        if (inside) return this.resolveExisting(inside, requestHash);
+        if (inside) {
+          return {
+            contract: this.resolveExisting(inside, requestHash),
+            notificationId: null,
+          };
+        }
         const created = await create(tx);
+        const notificationId = await this.notifications.createInTransaction(tx, {
+          userId,
+          type: 'financial',
+          title: 'Operación completada',
+          body: 'Revisa el detalle en BInova.',
+          resourceType: 'transaction',
+          resourceId: created.resourceId,
+        });
         await tx.idempotencyKey.create({
           data: {
             userId,
@@ -211,8 +228,15 @@ export class OperationsService {
             operationId: created.id,
           },
         });
-        return this.toContract(created);
+        return {
+          contract: this.toContract(created),
+          notificationId,
+        };
       });
+      if (outcome.notificationId) {
+        await this.notifications.dispatch(outcome.notificationId);
+      }
+      return outcome.contract;
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&

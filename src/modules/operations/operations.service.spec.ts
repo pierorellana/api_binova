@@ -2,6 +2,7 @@ import { ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { OperationsService } from './operations.service';
 
 describe('OperationsService idempotency', () => {
@@ -51,6 +52,9 @@ describe('OperationsService idempotency', () => {
           return storedOperation;
         },
       },
+      notification: {
+        create: async () => ({ id: 'notification-1' }),
+      },
     };
     const prisma: any = {
       idempotencyKey: {
@@ -59,7 +63,14 @@ describe('OperationsService idempotency', () => {
       $transaction: async (callback: (value: any) => Promise<unknown>) =>
         callback(tx),
     };
-    const service = new OperationsService(prisma as PrismaService);
+    const notifications = {
+      createInTransaction: jest.fn().mockResolvedValue('notification-1'),
+      dispatch: jest.fn().mockResolvedValue(undefined),
+    } as unknown as NotificationsService;
+    const service = new OperationsService(
+      prisma as PrismaService,
+      notifications,
+    );
     const input = {
       sourceAccountId: 'account-1',
       beneficiaryId: 'beneficiary-1',
@@ -71,6 +82,8 @@ describe('OperationsService idempotency', () => {
 
     expect(first.id).toBe('operation-1');
     expect(replay.id).toBe(first.id);
+    expect(notifications.createInTransaction).toHaveBeenCalledTimes(1);
+    expect(notifications.dispatch).toHaveBeenCalledTimes(1);
     await expect(
       service.createTransfer(
         'user-1',

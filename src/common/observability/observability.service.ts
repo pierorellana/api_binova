@@ -37,6 +37,21 @@ export class ObservabilityService {
     });
   }
 
+  recordPushDelivery(
+    notificationId: string,
+    sentCount: number,
+    invalidCount: number,
+    failedCount: number,
+  ): void {
+    this.write(failedCount > 0 ? 'warn' : 'log', {
+      event: 'push_delivery',
+      notificationId,
+      sentCount,
+      invalidCount,
+      failedCount,
+    });
+  }
+
   private write(level: 'log' | 'warn', event: Record<string, unknown>): void {
     this.logger[level](JSON.stringify(sanitizeApiLog(event)));
   }

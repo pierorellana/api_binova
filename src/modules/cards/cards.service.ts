@@ -9,13 +9,17 @@ import { Prisma } from '@prisma/client';
 import { createHash, randomInt } from 'node:crypto';
 
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateVirtualCardDto } from './dto/create-virtual-card.dto';
 import { UpdateCardLimitsDto } from './dto/update-card-limits.dto';
 import { WalletProvisioningDto } from './dto/wallet-provisioning.dto';
 
 @Injectable()
 export class CardsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async list(userId: string) {
     const cards = await this.prisma.card.findMany({
@@ -41,7 +45,7 @@ export class CardsService {
     if (existing) return this.resolveOperation(existing, requestHash);
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const outcome = await this.prisma.$transaction(async (tx) => {
         const inside = await tx.idempotencyKey.findUnique({
           where: {
             userId_operation_key: {
@@ -52,7 +56,12 @@ export class CardsService {
           },
           include: { operationRef: true },
         });
-        if (inside) return this.resolveOperation(inside, requestHash);
+        if (inside) {
+          return {
+            operation: this.resolveOperation(inside, requestHash),
+            notificationId: null,
+          };
+        }
 
         if (input.fundingAccountId) {
           const account = await tx.account.findFirst({
@@ -91,6 +100,14 @@ export class CardsService {
             providerReference: 'demo-virtual-card',
           },
         });
+        const notificationId = await this.notifications.createInTransaction(tx, {
+          userId,
+          type: 'informational',
+          title: 'Tarjeta virtual creada',
+          body: 'Tu tarjeta virtual ya está disponible en BInova.',
+          resourceType: 'card',
+          resourceId: card.id,
+        });
         await tx.idempotencyKey.create({
           data: {
             userId,
@@ -100,8 +117,15 @@ export class CardsService {
             operationId: operation.id,
           },
         });
-        return this.toOperation(operation);
+        return {
+          operation: this.toOperation(operation),
+          notificationId,
+        };
       });
+      if (outcome.notificationId) {
+        await this.notifications.dispatch(outcome.notificationId);
+      }
+      return outcome.operation;
     } catch (error) {
       if (this.isUniqueError(error)) {
         const raced = await this.findIdempotency(userId, 'virtual_card_creation', key);
