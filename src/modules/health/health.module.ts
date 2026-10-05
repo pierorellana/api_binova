@@ -1,10 +1,13 @@
-import { Controller, Get, Module } from '@nestjs/common';
+import { Controller, Get, Module, Req } from '@nestjs/common';
+
+import { success } from '../../common/responses/api-response';
+import { AuthenticatedRequest } from '../../common/types/authenticated-request';
 
 @Controller('health')
-class HealthController {
+export class HealthController {
   @Get()
-  health(): { status: string } {
-    return { status: 'ok' };
+  health(@Req() request: AuthenticatedRequest) {
+    return success({ status: 'ok' }, request.correlationId);
   }
 }
 
