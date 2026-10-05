@@ -11,6 +11,12 @@ interface PeriodRange {
   previousStart: Date;
 }
 
+/** Paying your own credit card moves money between products; it is not spending. */
+const INTERNAL_CATEGORIES = new Set(['card_payment']);
+
+/** Number of periods (ending with the current one) returned in `trend`. */
+const TREND_PERIODS = 6;
+
 @Injectable()
 export class InsightsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -18,17 +24,22 @@ export class InsightsService {
   async get(userId: string, requestedPeriod?: string) {
     const period = this.parsePeriod(requestedPeriod);
     const range = this.periodRange(period, new Date());
-    const transactions = await this.prisma.transaction.findMany({
+    const trendStarts = this.trendStarts(period, range.currentStart);
+    const all = await this.prisma.transaction.findMany({
       where: {
         account: { userId },
         status: 'succeeded',
         occurredAt: {
-          gte: range.previousStart,
+          gte: trendStarts[0],
           lt: range.currentEnd,
         },
       },
       orderBy: [{ occurredAt: 'asc' }, { id: 'asc' }],
     });
+    const transactions = all.filter(
+      (transaction) =>
+        !INTERNAL_CATEGORIES.has(transaction.category) && transaction.occurredAt >= range.previousStart,
+    );
 
     const current = transactions.filter(
       (transaction) => transaction.occurredAt >= range.currentStart,
@@ -48,7 +59,32 @@ export class InsightsService {
       totalExpense: { amount: totalExpense.toFixed(2), currency },
       comparisonPercentage: this.comparisonPercentage(totalExpense, previousExpense),
       categories,
+      trend: trendStarts.map((start, index) => {
+        const end = trendStarts[index + 1] ?? range.currentEnd;
+        const inPeriod = all.filter(
+          (transaction) =>
+            !INTERNAL_CATEGORIES.has(transaction.category) &&
+            transaction.occurredAt >= start &&
+            transaction.occurredAt < end,
+        );
+        return {
+          start: start.toISOString().slice(0, 10),
+          totalExpense: { amount: this.sumByKind(inPeriod, 'expense').toFixed(2), currency },
+        };
+      }),
     };
+  }
+
+  /** Start dates of the last [TREND_PERIODS] periods, oldest first. */
+  private trendStarts(period: InsightPeriod, currentStart: Date): Date[] {
+    return Array.from({ length: TREND_PERIODS }, (_, index) => {
+      const back = TREND_PERIODS - 1 - index;
+      const start = new Date(currentStart);
+      if (period === 'year') start.setUTCFullYear(start.getUTCFullYear() - back);
+      else if (period === 'month') start.setUTCMonth(start.getUTCMonth() - back);
+      else start.setUTCDate(start.getUTCDate() - back * 7);
+      return start;
+    });
   }
 
   private parsePeriod(value?: string): InsightPeriod {

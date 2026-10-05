@@ -86,4 +86,38 @@ describe('InsightsService', () => {
     expect(result.comparisonPercentage).toBeNull();
     expect(result.categories).toEqual([]);
   });
+
+  it('returns a six-month trend and leaves own credit card payments out of spending', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-10-04T12:00:00.000Z'));
+    const expense = (id: string, amount: string, occurredAt: string, category = 'groceries') => ({
+      id,
+      kind: 'expense',
+      category,
+      amount: new Prisma.Decimal(amount),
+      currency: 'USD',
+      status: 'succeeded',
+      occurredAt: new Date(occurredAt),
+    });
+    const findMany = jest.fn().mockResolvedValue([
+      expense('may', '980.00', '2026-05-15T12:00:00.000Z'),
+      expense('sep', '100.00', '2026-09-15T12:00:00.000Z'),
+      expense('oct', '112.00', '2026-10-02T12:00:00.000Z'),
+      expense('card', '250.00', '2026-10-01T12:00:00.000Z', 'card_payment'),
+    ]);
+    const service = new InsightsService({ transaction: { findMany } } as never);
+
+    const result = await service.get('user-1', 'month');
+
+    expect(findMany.mock.calls[0][0].where.occurredAt.gte).toEqual(new Date('2026-05-01T00:00:00.000Z'));
+    expect(result.totalExpense).toEqual({ amount: '112.00', currency: 'USD' });
+    expect(result.comparisonPercentage).toBe('12.00');
+    expect(result.trend.map((point) => [point.start, point.totalExpense.amount])).toEqual([
+      ['2026-05-01', '980.00'],
+      ['2026-06-01', '0.00'],
+      ['2026-07-01', '0.00'],
+      ['2026-08-01', '0.00'],
+      ['2026-09-01', '100.00'],
+      ['2026-10-01', '112.00'],
+    ]);
+  });
 });
