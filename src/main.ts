@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+import { ConsoleLogger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -10,7 +10,12 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ApiObservabilityInterceptor } from './common/observability/api-observability.interceptor';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: new ConsoleLogger({
+      json: true,
+      logLevels: ['log', 'warn', 'error', 'fatal'],
+    }),
+  });
   const config = app.get(ConfigService);
 
   app.setGlobalPrefix('v1');

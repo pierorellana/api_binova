@@ -69,7 +69,11 @@ export class ApiObservabilityInterceptor implements NestInterceptor {
     }
     const payload = (error as { getResponse(): unknown }).getResponse();
     if (typeof payload !== 'object' || payload === null) return undefined;
-    const code = (payload as Record<string, unknown>).code;
+    const body = payload as Record<string, unknown>;
+    const code = body.code ??
+      (typeof body.error === 'object' && body.error !== null
+        ? (body.error as Record<string, unknown>).code
+        : undefined);
     return typeof code === 'string' ? code : undefined;
   }
 }

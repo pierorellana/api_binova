@@ -39,12 +39,18 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const traceId = request.correlationId || 'unknown';
 
     response.status(status).json({
-      error: {
-        code,
-        message,
-        details: typeof details.details === 'object' ? details.details : {},
+      data: null,
+      message,
+      statusCode: status,
+      code,
+      details:
+        typeof details.details === 'object' && details.details !== null
+          ? details.details
+          : {},
+      meta: {
+        traceId,
+        generatedAt: new Date().toISOString(),
       },
-      traceId,
     });
   }
 

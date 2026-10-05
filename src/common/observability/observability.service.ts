@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import { sanitizeApiLog } from './log-sanitizer';
+
 interface RequestObservation {
   method: string;
   route: string;
@@ -34,6 +36,6 @@ export class ObservabilityService {
   }
 
   private write(level: 'log' | 'warn', event: Record<string, unknown>): void {
-    this.logger[level](JSON.stringify(event));
+    this.logger[level](JSON.stringify(sanitizeApiLog(event)));
   }
 }
