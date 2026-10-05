@@ -53,6 +53,7 @@ export class CardsController {
         idempotencyKey ?? '',
       ),
       request.correlationId,
+      { statusCode: HttpStatus.ACCEPTED, message: 'Operación recibida.' },
     );
   }
 
@@ -66,6 +67,7 @@ export class CardsController {
   }
 
   @Post(':id/freeze')
+  @HttpCode(HttpStatus.OK)
   async freeze(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -75,6 +77,7 @@ export class CardsController {
   }
 
   @Post(':id/unfreeze')
+  @HttpCode(HttpStatus.OK)
   async unfreeze(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -125,6 +128,7 @@ export class CardsController {
         idempotencyKey ?? '',
       ),
       request.correlationId,
+      { statusCode: HttpStatus.ACCEPTED, message: 'Operación recibida.' },
     );
   }
 }

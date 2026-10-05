@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  HttpCode,
+  HttpStatus,
   Post,
   Req,
   UseGuards,
@@ -21,6 +23,7 @@ export class AuthController {
   constructor(private readonly service: AuthService) {}
 
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   login(@Body() input: LoginDto, @Req() request: AuthenticatedRequest) {
     return this.service
       .login(input.username, input.password)
@@ -28,6 +31,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @HttpCode(HttpStatus.OK)
   refresh(@Body() input: RefreshDto, @Req() request: AuthenticatedRequest) {
     return this.service
       .refresh(input.refreshToken)
@@ -35,6 +39,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @UseGuards(AccessTokenGuard)
   async logout(

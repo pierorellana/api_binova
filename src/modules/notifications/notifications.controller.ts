@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
@@ -36,10 +38,13 @@ export class NotificationsController {
       limit: Math.min(Math.max(Number(limit ?? 20) || 20, 1), 50),
       unreadOnly: unreadOnly === 'true',
     });
-    return success(page.items, request.correlationId, page.nextCursor);
+    return success(page.items, request.correlationId, {
+      nextCursor: page.nextCursor,
+    });
   }
 
   @Post(':id/read')
+  @HttpCode(HttpStatus.OK)
   async markRead(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -52,6 +57,7 @@ export class NotificationsController {
   }
 
   @Post('read-all')
+  @HttpCode(HttpStatus.OK)
   async markAllRead(
     @CurrentUser() user: AuthenticatedUser,
     @Req() request: AuthenticatedRequest,

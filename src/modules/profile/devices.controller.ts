@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
@@ -45,6 +46,7 @@ export class DevicesController {
     return success(
       await this.service.registerDevice(user.userId, input),
       request.correlationId,
+      { statusCode: HttpStatus.CREATED },
     );
   }
 

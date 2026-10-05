@@ -32,7 +32,9 @@ export class TransactionsController {
       from,
       to,
     });
-    return success(page.items, request.correlationId, page.nextCursor);
+    return success(page.items, request.correlationId, {
+      nextCursor: page.nextCursor,
+    });
   }
 
   @Get('transactions/:id')

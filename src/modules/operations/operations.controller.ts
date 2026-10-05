@@ -52,6 +52,7 @@ export class OperationsController {
     return success(
       await this.service.createTransfer(user.userId, input, idempotencyKey ?? ''),
       request.correlationId,
+      { statusCode: HttpStatus.ACCEPTED, message: 'Operación recibida.' },
     );
   }
 
@@ -78,6 +79,7 @@ export class OperationsController {
     return success(
       await this.service.createPayment(user.userId, input, idempotencyKey ?? ''),
       request.correlationId,
+      { statusCode: HttpStatus.ACCEPTED, message: 'Operación recibida.' },
     );
   }
 
@@ -92,6 +94,7 @@ export class OperationsController {
     return success(
       await this.service.createTopup(user.userId, input, idempotencyKey ?? ''),
       request.correlationId,
+      { statusCode: HttpStatus.ACCEPTED, message: 'Operación recibida.' },
     );
   }
 
