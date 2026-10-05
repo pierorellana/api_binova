@@ -33,6 +33,24 @@ export class OperationsService {
     }));
   }
 
+  /** Demo billers shown in Pagar servicios (amounts from the BInova prototype). */
+  private static readonly demoBills: Record<string, { name: string; amount: string }> = {
+    'luz-electrica': { name: 'Luz eléctrica', amount: '32.90' },
+    'agua-potable': { name: 'Agua potable', amount: '14.75' },
+    'internet-hogar': { name: 'Internet hogar', amount: '32.90' },
+    'telefonia-movil': { name: 'Telefonía móvil', amount: '25.00' },
+  };
+
+  /** Next occurrence of `day` (this month if still ahead, otherwise next month). */
+  private nextDay(day: number): Date {
+    const now = new Date();
+    const due = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), day));
+    if (due.getTime() < Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())) {
+      due.setUTCMonth(due.getUTCMonth() + 1);
+    }
+    return due;
+  }
+
   async getDebt(providerId: string, accountReference: string) {
     const normalizedProvider = providerId.trim();
     const normalizedReference = accountReference.trim();
@@ -42,13 +60,14 @@ export class OperationsService {
         message: 'Proveedor y referencia son obligatorios.',
       });
     }
+    const known = OperationsService.demoBills[normalizedProvider];
     return {
       providerId: normalizedProvider,
-      providerName: `${normalizedProvider} demo`,
+      providerName: known?.name ?? `${normalizedProvider} demo`,
       accountReference: normalizedReference,
       debtReference: this.debtReference(normalizedProvider, normalizedReference),
-      amount: { amount: '20.00', currency: 'USD' },
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      amount: { amount: known?.amount ?? '20.00', currency: 'USD' },
+      dueDate: (known ? this.nextDay(15) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000))
         .toISOString()
         .slice(0, 10),
       status: 'payable',
@@ -254,6 +273,7 @@ export class OperationsService {
         availableBalance: { decrement: amount },
       },
     });
+    const reference = this.operationReference(new Date());
     const transaction = await tx.transaction.create({
       data: {
         accountId: account.id,
@@ -264,7 +284,7 @@ export class OperationsService {
         currency: input.amount.currency,
         status: 'succeeded',
         occurredAt: new Date(),
-        reference: `OP-${Date.now()}`,
+        reference,
       },
     });
     return tx.financialOperation.create({
@@ -280,9 +300,15 @@ export class OperationsService {
           transactionId: transaction.id,
         },
         resourceId: transaction.id,
-        providerReference: `demo-${input.operationType}`,
+        providerReference: reference,
       },
     });
+  }
+
+  /** Receipt reference shown to the customer, e.g. `BI-261003-1052`. */
+  private operationReference(at: Date): string {
+    const two = (n: number) => String(n).padStart(2, '0');
+    return `BI-${two(at.getFullYear() % 100)}${two(at.getMonth() + 1)}${two(at.getDate())}-${two(at.getHours())}${two(at.getMinutes())}`;
   }
 
   private async findIdempotency(userId: string, operation: string, key: string) {
