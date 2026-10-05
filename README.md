@@ -54,6 +54,40 @@ curl -i http://localhost:3000/v1/health \
   -H 'X-Correlation-Id: smoke-health-2026-10-05'
 ```
 
+## Notificaciones push Android
+
+La API integra Firebase Admin SDK.
+
+Android activos registrados en /v1/devices. Las operaciones financieras nuevas y la
+creación de una tarjeta virtual persisten primero una notificación en el inbox; después
+del commit se intenta el envío push. Una falla de FCM no revierte la operación ni elimina
+la notificación persistida.
+
+Configura localmente, sin versionar el archivo de credenciales:
+
+~~~dotenv
+FIREBASE_SERVICE_ACCOUNT_PATH=./binova-92083-firebase-adminsdk-fbsvc-9500400d3b.json
+PUSH_ENABLED=true
+PUSH_TEST_ENDPOINT_ENABLED=true
+~~~
+
+FIREBASE_SERVICE_ACCOUNT_PATH apunta al JSON de cuenta de servicio descargado desde
+Firebase Console > Project settings > Service accounts. El JSON y sus claves privadas
+están excluidos por .gitignore; en producción se recomienda usar un secreto montado
+por el entorno y mantener PUSH_TEST_ENDPOINT_ENABLED=false.
+
+Con un access token válido, la ruta de prueba crea una notificación no sensible y usa el
+mismo flujo de persistencia/envío:
+
+~~~bash
+curl -i -X POST http://localhost:3000/v1/notifications/test -H "Authorization: Bearer $ACCESS_TOKEN" -H 'X-Correlation-Id: push-smoke-2026-10-05'
+~~~
+
+La respuesta es 202 con el envelope estándar. El payload FCM contiene únicamente
+type, notificationId, resourceType y resourceId; nunca contiene saldos, montos,
+tokens, PAN/CVV ni números completos de cuenta. Los logs de entrega registran conteos,
+estado y códigos seguros del proveedor, nunca el token FCM ni el cuerpo de negocio.
+
 ## Capacidades implementadas
 
 La vertical actual incluye salud, autenticación con refresh rotatorio, dashboard server-driven, cuentas, movimientos, perfil/preferencias, dispositivos, inbox de notificaciones, operaciones demo de transferencias/pagos/recargas con idempotencia, tarjetas virtuales, congelamiento, límites, provisión a Wallet, insights financieros y tipos de cambio detrás de un adapter.
@@ -70,4 +104,8 @@ npx prisma validate
 
 ## Límites conocidos frente a la prueba
 
-El API no implementa recuperación de contraseña. FCM/push real, Crashlytics/Sentry, dashboards/alertas de producción, validación OpenAPI en CI y un flujo E2E crítico todavía necesitan integración o evidencia adicional. El reporte completo está en [`../context_specs/evidence/technical-test-gap-report-2026-10-05.md`](../context_specs/evidence/technical-test-gap-report-2026-10-05.md).
+El API no implementa recuperación de contraseña. Crashlytics/Sentry, dashboards/alertas
+de producción, validación OpenAPI en CI y un flujo E2E crítico todavía necesitan
+integración o evidencia adicional. Push está implementado para Android, pero aún falta
+la validación manual en un dispositivo/emulador Firebase con el API accesible por red.
+El reporte completo está en ../context_specs/evidence/technical-test-gap-report-2026-10-05.md.
